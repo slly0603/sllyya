@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中药材图片展示</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .gallery-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        .gallery-item:hover {
+            transform: translateY(-5px);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+        .gallery-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        .gallery-item:hover .gallery-info {
+            transform: translateY(0);
+        }
+        .gallery-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        .gallery-desc {
+            font-size: 14px;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            max-width: 90%;
+            max-height: 90vh;
+            position: relative;
+        }
+        .modal img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--primary-color);
+            border-radius: 20px;
+            background: transparent;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        .hero h1 {
+            font-size: 3em;
+            color: #2e7d32;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+        .hero p {
+            font-size: 1.2em;
+            color: #2e7d32;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>中药材图片展示</h1>
+        <nav>
+            <div class="nav-container">
+                <ul>
+                    <li><a href="../index.html">首页</a></li>
+                    <li><a href="relationships.html">药物关系</a></li>
+                    <li><a href="statistics.html">统计分布</a></li>
+                    <li><a href="geography.html">地理分布</a></li>
+                    <li><a href="production.html">产量分析</a></li>
+                    <li><a href="medical-value.html">药用价值</a></li>
+                    <li><a href="environment.html">环境影响</a></li>
+                    <li><a href="market.html">市场分析</a></li>
+                    <li><a href="export.html">出口数据</a></li>
+                    <li><a href="gallery.html" class="active">图片展示</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>中药材图片展示</h1>
+            <p>探索中药材的形态特征与生长环境</p>
+        </section>
+
+        <section class="content">
+            <div class="card">
+                <h2>中药材图库</h2>
+                <div class="filter-container">
+                    <button class="filter-btn active" data-filter="all">全部</button>
+                    <button class="filter-btn" data-filter="root">根类</button>
+                    <button class="filter-btn" data-filter="flower">花类</button>
+                    <button class="filter-btn" data-filter="fruit">果实类</button>
+                    <button class="filter-btn" data-filter="leaf">叶类</button>
+                </div>
+                <div class="gallery-container" id="galleryContainer"></div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <img id="modalImage" src="" alt="中药材图片">
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <p>© 2024 中药材数据可视化. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 中药材图片数据
+        const herbs = [
+            {
+                name: '人参',
+                category: 'root',
+                image: '../images/人参.png',
+                desc: '人参为五加科植物人参的干燥根，具有补气养血、安神益智的功效。'
+            },
+            {
+                name: '当归',
+                category: 'root',
+                image: '../images/当归.png',
+                desc: '当归为伞形科植物当归的干燥根，具有补血活血、调经止痛的功效。'
+            },
+            {
+                name: '黄芪',
+                category: 'root',
+                image: '../images/黄芪.png',
+                desc: '黄芪为豆科植物黄芪的干燥根，具有补气升阳、固表止汗的功效。'
+            },
+            {
+                name: '枸杞',
+                category: 'fruit',
+                image: '../images/枸杞.png',
+                desc: '枸杞为茄科植物宁夏枸杞的干燥成熟果实，具有滋补肝肾、益精明目的功效。'
+            },
+            {
+                name: '菊花',
+                category: 'flower',
+                image: '../images/菊花.png',
+                desc: '菊花为菊科植物菊的干燥头状花序，具有疏散风热、平肝明目的功效。'
+            },
+            {
+                name: '金银花',
+                category: 'flower',
+                image: '../images/金银花.png',
+                desc: '金银花为忍冬科植物忍冬的干燥花蕾，具有清热解毒、疏散风热的功效。'
+            },
+            {
+                name: '山楂',
+                category: 'fruit',
+                image: '../images/山楂.png',
+                desc: '山楂为蔷薇科植物山楂的干燥成熟果实，具有消食化积、行气散瘀的功效。'
+            },
+            {
+                name: '桑叶',
+                category: 'leaf',
+                image: '../images/桑叶.png',
+                desc: '桑叶为桑科植物桑的干燥叶，具有疏散风热、清肺润燥的功效。'
+            },
+            {
+                name: '荷叶',
+                category: 'leaf',
+                image: '../images/荷叶.png',
+                desc: '荷叶为睡莲科植物莲的干燥叶，具有清热解暑、升发清阳的功效。'
+            },
+            {
+                name: '三七',
+                category: 'root',
+                image: '../images/三七.png',
+                desc: '三七为五加科植物三七的干燥根，具有散瘀止血、消肿定痛的功效。'
+            },
+            {
+                name: '甘草',
+                category: 'root',
+                image: '../images/甘草.png',
+                desc: '甘草为豆科植物甘草的干燥根和根茎，具有补脾益气、清热解毒、祛痰止咳的功效。'
+            },
+            {
+                name: '柴胡',
+                category: 'root',
+                image: '../images/柴胡.png',
+                desc: '柴胡为伞形科植物柴胡的干燥根，具有和解少阳、疏肝解郁、升举阳气的功效。'
+            }
+        ];
+
+        // 生成图片展示
+        function generateGallery(filter = 'all') {
+            const container = document.getElementById('galleryContainer');
+            container.innerHTML = '';
+            
+            herbs.filter(herb => filter === 'all' || herb.category === filter).forEach(herb => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `
+                    <img src="${herb.image}" alt="${herb.name}">
+                    <div class="gallery-info">
+                        <div class="gallery-title">${herb.name}</div>
+                        <div class="gallery-desc">${herb.desc}</div>
+                    </div>
+                `;
+                item.addEventListener('click', () => showModal(herb.image));
+                container.appendChild(item);
+            });
+        }
+
+        // 显示模态框
+        function showModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'flex';
+            modalImg.src = imageSrc;
+        }
+
+        // 关闭模态框
+        document.querySelector('.modal-close').addEventListener('click', () => {
+            document.getElementById('imageModal').style.display = 'none';
+        });
+
+        // 筛选按钮点击事件
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                generateGallery(btn.dataset.filter);
+            });
+        });
+
+        // 页面加载完成后初始化
+        window.onload = function() {
+            generateGallery();
+        };
+    </script>
+</body>
+</html> 
